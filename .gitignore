@@ -1,0 +1,4 @@
+android-project/
+node_modules/
+.gradle/
+*.keystore
