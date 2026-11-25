@@ -40,8 +40,8 @@ android {
         applicationId '${pkg}'
         minSdk 24
         targetSdk 34
-        versionCode 33
-        versionName '3.3'
+        versionCode 41
+        versionName '4.1'
     }
 
     buildTypes {
@@ -71,7 +71,8 @@ W('app/src/main/AndroidManifest.xml', `<?xml version="1.0" encoding="utf-8"?>
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
@@ -211,7 +212,7 @@ public class MainActivity extends Activity {
 
 W('app/src/main/res/values/strings.xml', `<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Ретро-ловушка</string>
+    <string name="app_name">Союзаркада</string>
 </resources>
 `);
 
@@ -228,17 +229,12 @@ W('app/src/main/res/values/themes.xml', `<?xml version="1.0" encoding="utf-8"?>
 </resources>
 `);
 
-W('app/src/main/res/drawable/ic_launcher.xml', `<?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp" android:height="48dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <path android:pathData="M12,2 h24 a10,10 0 0 1 10,10 v24 a10,10 0 0 1 -10,10 h-24 a10,10 0 0 1 -10,-10 v-24 a10,10 0 0 1 10,-10 z"
-        android:fillColor="#1f6f6b" android:strokeColor="#20302c" android:strokeWidth="2"/>
-    <path android:pathData="M24,8 l4.6,10.4 11.4,1.1 -8.6,7.6 2.6,11.2 -10,-5.9 -10,5.9 2.6,-11.2 -8.6,-7.6 11.4,-1.1 z"
-        android:fillColor="#e04a3a" android:strokeColor="#20302c" android:strokeWidth="1.6"/>
-    <path android:pathData="M24,18 a4.6,6 0 1,0 0.001,0 z" android:fillColor="#fff8ea" android:strokeColor="#20302c" android:strokeWidth="1.4"/>
-</vector>
-`);
+// иконка приложения: готовый PNG из tools/icons (логотип «Союзаркада»)
+for (const d of ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']) {
+  const dir = path.join(out, 'app/src/main/res/mipmap-' + d);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.copyFileSync('tools/icons/icon-192.png', path.join(dir, 'ic_launcher.png'));
+}
 
 fs.mkdirSync(path.join(out, 'app/src/main/assets'), { recursive: true });
 fs.copyFileSync(gamePath, path.join(out, 'app/src/main/assets/index.html'));
