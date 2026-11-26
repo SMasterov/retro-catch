@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+﻿import fs from 'node:fs';
 import path from 'node:path';
 
 const candidates = ['game/index.html', 'index.html', 'www/index.html'];
@@ -40,8 +40,8 @@ android {
         applicationId '${pkg}'
         minSdk 24
         targetSdk 34
-        versionCode 42
-        versionName '4.2'
+        versionCode 43
+        versionName '4.3'
     }
 
     buildTypes {

@@ -107,6 +107,8 @@ background:linear-gradient(180deg,var(--paper),var(--cream));white-space:nowrap}
 .abtn.warn{background:linear-gradient(135deg,var(--amber),var(--amber2))}
 .abtn.teal{background:linear-gradient(135deg,#2c8a85,var(--teal2));color:var(--paper)}
 .abtn.flip svg{transform:scaleX(-1)}
+.abtn.hot{animation:hotp .32s ease-in-out infinite alternate;outline:3px solid #f2b134;outline-offset:-3px}
+@keyframes hotp{from{filter:brightness(1)}to{filter:brightness(1.45) saturate(1.3)}}
 /* ---------- toast ---------- */
 #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 76px);z-index:95;pointer-events:none;
 transform:translate(-50%,-14px) scale(.72);opacity:0;max-width:88vw;text-align:center;font-family:var(--display);
@@ -359,9 +361,9 @@ startRace:'НА СТАРТ!',hp:'л.с.',topSpeed:'макс',accel:'разгон
 map0:'Просёлок',map0s:'деревни, берёзы',map1:'Степной тракт',map1s:'поля, ЛЭП, ветер',map2:'Заводское шоссе',map2s:'панельки, трубы',
 needWins:'Нужно побед',racing:'ЗАЕЗД',finished:'ФИНИШ',crashed:'ЗАВАЛ! ДЕРЖИСЬ',wipeout:'ТЫ УПАЛ',
 resWin:'ПОБЕДА!',resPlace:'МЕСТО',resTime:'ВРЕМЯ',resGlory:'ЗАСЛУГИ ПЕРЕД ОТЕЧЕСТВОМ',resBest:'ЛУЧШЕЕ ВРЕМЯ',
-retry:'ЕЩЁ ЗАЕЗД',toGarage:'В ГАРАЖ',rivalKicked:'СОПЕРНИК СДАЁТ',youKicked:'ТЕБЯ ТОЛКНУЛИ',
+retry:'ЕЩЁ ЗАЕЗД',toGarage:'В ГАРАЖ',rivalKicked:'СОПЕРНИК СДАЁТ',youKicked:'ТЕБЯ ТОЛКНУЛИ',rivalWarn:'СОПЕРНИК БЬЁТ!',
 motoHelp1:'<b>Руль:</b> положи большой палец на левую панель и веди вправо или влево, как ползунок. Чем дальше сдвинул, тем круче поворот; отпустил — едешь прямо. Газ включён сам, тормоз — справа.',
-motoHelp2:'<b>Драка:</b> поравнялся с соперником — жми «НОГА» в его сторону. Три удара — и он заваливается.',
+motoHelp2:'<b>Драка:</b> поравнялся с соперником борт в борт — под ним жёлтое кольцо со стрелкой, а нужная кнопка «НОГА» мигает: бей! Три удара — и он заваливается. Красное кольцо и красная вспышка у края экрана — соперник замахнулся: сверни или ударь первым.',
 motoHelp3:'<b>Корпус:</b> удары о машины и ноги соперников ломают корпус. На нуле — падение и потеря времени.',
 motoHelp4:'<b>Обочина:</b> на траве мотоцикл трясёт и тормозит. Держись асфальта, срезай по внутреннему радиусу.',
 motoHelp5:'<b>Мотоциклы:</b> мощность из справочника определяет разгон и максималку. «Урал» и «Днепр» тянут, «Минск» юркий.',
@@ -401,9 +403,9 @@ startRace:'TO THE START!',hp:'hp',topSpeed:'top',accel:'accel',grip:'grip',
 map0:'Country lane',map0s:'villages, birches',map1:'Steppe road',map1s:'fields, pylons, wind',map2:'Factory highway',map2s:'blocks, chimneys',
 needWins:'Wins needed',racing:'RACE',finished:'FINISH',crashed:'WIPEOUT! HOLD ON',wipeout:'YOU CRASHED',
 resWin:'VICTORY!',resPlace:'PLACE',resTime:'TIME',resGlory:'MERITS TO THE MOTHERLAND',resBest:'BEST TIME',
-retry:'RACE AGAIN',toGarage:'GARAGE',rivalKicked:'RIVAL IS FALLING',youKicked:'YOU GOT HIT',
+retry:'RACE AGAIN',toGarage:'GARAGE',rivalKicked:'RIVAL IS FALLING',youKicked:'YOU GOT HIT',rivalWarn:'RIVAL KICKS!',
 motoHelp1:'<b>Steering:</b> put your thumb on the left pad and drag left or right like a slider. The further you drag, the sharper the turn; let go to ride straight. Gas is automatic, brake is on the right.',
-motoHelp2:'<b>Fights:</b> pull alongside a rival and press KICK toward him. Three hits and he goes down.',
+motoHelp2:'<b>Fights:</b> ride side by side with a rival — a yellow ring with an arrow appears under him and the matching KICK button blinks: strike! Three hits and he goes down. A red ring and a red flash on the screen edge mean he is winding up: swerve or kick first.',
 motoHelp3:'<b>Frame:</b> cars and rival kicks damage the frame. At zero you crash and lose time.',
 motoHelp4:'<b>Shoulder:</b> grass shakes and slows the bike. Stay on asphalt, cut the inside line.',
 motoHelp5:'<b>Bikes:</b> horsepower from the reference table sets acceleration and top speed. Ural and Dnepr pull, Minsk is nimble.',
@@ -487,6 +489,7 @@ revive:function(){[262,392,523,659,784].forEach(function(f,i){A.tone(f,.12,'tria
 deny:function(){A.tone(220,.09,'square',.04,160);},
 hit:function(){A.noise(.18,.12,500);A.tone(110,.2,'square',.06,60);},
 kick:function(){A.noise(.1,.07,1800);A.tone(420,.08,'square',.04,180);},
+warn:function(){A.tone(1000,.09,'square',.05,700);},
 pass:function(){A.noise(.22,.05,1400);},
 win:function(){[523,659,784,1046,1318,1568].forEach(function(f,i){A.tone(f,.16,'triangle',.05,null,i*.09);});},
 lose:function(){[392,349,294,262].forEach(function(f,i){A.tone(f,.24,'triangle',.05,null,i*.18);});},
@@ -1024,13 +1027,15 @@ function mixc(a,b,t){var A=hx(a),B=hx(b);return'rgb('+Math.round(A[0]+(B[0]-A[0]
 var Moto={};
 (function(){
 var SEG=200,RUMBLE=3,ROADW=2000,LANES=3,FOV=100,CAMH=1000,DRAW=180,FOGD=4.2;
-var camD=1/Math.tan((FOV/2)*PI/180),playerZ=CAMH*camD;
+var camD=1/Math.tan((FOV/2)*PI/180),PSC=.62,playerZ=CAMH*camD/PSC,HY=0;
+/* игрок стоит на глубине playerZ: колесо рисуется ровно там, где дорога проецируется на этой глубине,
+   поэтому соперник «вровень» выглядит того же размера и стоит на той же высоте экрана */
 var BIKEW=500,CARW=[1150,840,900,1200,1000],finishZ=0,finishIdx=0;
 var segs=[],trackLen=0,cars=[],rivals=[],map=MAPS[0],bike=BIKES[0],diff=0;
 var pos=0,px=0,speed=0,health=100,raceT=0,st='garage',countdown=0,place=1,finished=false,crashT=0,lean=0,kickT=0,kickSide=0;
 var shake=0,flash=0,dust=[],sparks=[],skyGrad=null,err=false,lastSec=-1,bestTime=0,gloryGain=0,skyOff=0;
 var keys={left:false,right:false,gas:false,brake:false,axis:0};
-var pbw=150,pby=0,pbh=195,dockH=132;
+var pbw=150,pby=0,pbh=195,dockH=132,hotSide=0,warnSide=0,hotShown=-9;
 var LOOKS=[
 {j:'#7a4a26',j2:'#4a2c14',p:'#2e3b4a',h:'#f6ead2',hs:'#e04a3a',sc:'#e04a3a',star:1},
 {j:'#2c3138',j2:'#15181c',p:'#3d4a3a',h:'#c9372c',hs:'#f6ead2',sc:'#f2b134'},
@@ -1106,7 +1111,7 @@ function findSeg(z){return segs[Math.floor(z/SEG)%segs.length];}
 function pct(z){return(z%SEG)/SEG;}
 function proj(p,camX,camY,camZ){p.camera.x=(p.world.x||0)-camX;p.camera.y=(p.world.y||0)-camY;p.camera.z=(p.world.z||0)-camZ;
 p.screen.scale=camD/p.camera.z;p.screen.x=Math.round(W/2+p.screen.scale*p.camera.x*W/2);
-p.screen.y=Math.round(H/2-p.screen.scale*p.camera.y*H/2);p.screen.w=Math.round(p.screen.scale*ROADW*W/2);}
+p.screen.y=Math.round(HY-p.screen.scale*p.camera.y*H/2);p.screen.w=Math.round(p.screen.scale*ROADW*W/2);}
 function lastY(){return segs.length===0?0:segs[segs.length-1].p2.world.y;}
 function addSeg(curve,y){var n=segs.length;
 segs.push({index:n,p1:{world:{y:lastY(),z:n*SEG},camera:{},screen:{}},p2:{world:{y:y,z:(n+1)*SEG},camera:{},screen:{}},
@@ -1154,22 +1159,27 @@ for(var c=0;c<traffic;c++){var z=(14+Math.floor(R()*(finishIdx-14)))*SEG;
 cars.push({z:z,off:(R()*1.7-.85),sp:900+R()*1500,t:(R()*5)|0,v:(R()*3)|0,w:0});}
 }
 function resetRivals(){rivals=[];var R=mulberry(77+diff*13);
+/* соперники ездят на тех же скоростях, что и твой мотоцикл (а не на «своих»): гонка идёт с тобой наравне.
+   Фора 2–8 секунд хода, стартуют с места и разгоняются как твой мотоцикл. */
+var sp0=[.94,.98,1.02][diff],sp1=[1.0,1.04,1.08][diff],aggP=[.55,.8,1][diff],secU=bike.maxU;
 for(var i=0;i<5;i++){var b=BIKES[clamp(Profile.bike+((R()*5)|0)-2,0,BIKES.length-1)];
-var rtop=Math.min(b.maxU*[.86,.94,1.0][diff],bike.maxU*[.98,1.03,1.08][diff]);
-rivals.push({z:playerZ+400+i*260,off:(i%2?1:-1)*(.25+R()*.35),sp:rtop*(.9+R()*.12),top:rtop,bike:b,look:LOOKS[1+(i%(LOOKS.length-1))],ks:1,
-hp:100,kick:0,wob:0,name:names[(R()*names.length)|0],down:0,fin:0});}}
+var rtop=bike.maxU*(sp0+(sp1-sp0)*R());
+rivals.push({z:playerZ+secU*(1.6+i*1.3),off:(i%2?1:-1)*(.25+R()*.35),home:0,sp:0,top:rtop,acc:bike.acc*(.92+R()*.16),bike:b,look:LOOKS[1+(i%(LOOKS.length-1))],ks:1,
+hp:100,kick:0,wob:0,name:names[(R()*names.length)|0],down:0,fin:0,aggr:R()<aggP,cd:1800+R()*1500,wind:0,hot:0,pc:null,pl:null});
+rivals[i].home=rivals[i].off;}}
 function resize(){skyGrad=null;}
-function sky(){if(!skyGrad){skyGrad=cx.createLinearGradient(0,0,0,H*.62);
+function sky(){var sb=HY+H*.12,sd=HY-H/2;
+if(!skyGrad){skyGrad=cx.createLinearGradient(0,0,0,sb);
 skyGrad.addColorStop(0,map.sky[0]);skyGrad.addColorStop(.55,map.sky[1]);skyGrad.addColorStop(1,map.sky[2]);}
-cx.fillStyle=skyGrad;cx.fillRect(0,0,W,H*.62);
-var sunX=W*.72-skyOff*.4,sunY=H*.16;
+cx.fillStyle=skyGrad;cx.fillRect(0,0,W,sb);
+var sunX=W*.72-skyOff*.4,sunY=H*.16+sd*.5;
 var g=cx.createRadialGradient(sunX,sunY,4,sunX,sunY,90);g.addColorStop(0,'rgba(255,240,190,.95)');g.addColorStop(1,'rgba(255,220,150,0)');
 cx.fillStyle=g;cx.beginPath();cx.arc(sunX,sunY,90,0,TAU);cx.fill();
 cx.fillStyle=map.id===2?'#f0b070':'#fff0c0';cx.beginPath();cx.arc(sunX,sunY,17,0,TAU);cx.fill();
 cx.fillStyle=map.id===2?'rgba(60,50,80,.55)':'rgba(120,160,140,.5)';
-var hy=H*.56;cx.beginPath();cx.moveTo(0,hy);
+var hy=HY+H*.06;cx.beginPath();cx.moveTo(0,hy);
 for(var i=0;i<=8;i++){var x=W*i/8;cx.lineTo(x,hy-14-Math.sin(i*1.3+skyOff*.002)*12);}
-cx.lineTo(W,H*.62);cx.lineTo(0,H*.62);cx.fill();}
+cx.lineTo(W,sb);cx.lineTo(0,sb);cx.fill();}
 function poly(x1,y1,x2,y2,x3,y3,x4,y4,col){cx.fillStyle=col;cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.lineTo(x3,y3);cx.lineTo(x4,y4);cx.closePath();cx.fill();}
 function segRender(s,fog){var p1=s.p1.screen,p2=s.p2.screen,li=s.light;
 var gr=li?map.grass[0]:map.grass[1],rd=li?map.road[0]:map.road[1],rm=li?map.rumble[0]:map.rumble[1];
@@ -1535,6 +1545,7 @@ cx.fillStyle=look.hs;cx.fillRect(-1.8,-126.4,3.6,15);
 cx.fillStyle='#1c1c1c';cx.fillRect(-12,-118,24,2.7);cx.fillStyle='#b8bec2';cx.fillRect(-1.7,-118.4,3.4,3.5);
 cx.restore();}
 function render(){if(!segs.length)return;
+var hyN=H-dockH-4-H*.31*(PSC/.62);if(Math.abs(hyN-HY)>.5){HY=hyN;skyGrad=null;}
 var base=findSeg(pos),bpct=pct(pos),pseg=findSeg(pos+playerZ),ppct=pct(pos+playerZ);
 var py=lerp(pseg.p1.world.y,pseg.p2.world.y,ppct),maxy=H,x=0,dx=-(base.curve*bpct);
 cx.clearRect(0,0,W,H);cx.save();
@@ -1564,16 +1575,25 @@ var rs=findSeg(rv.z);if(rs!==s||!rs.p1.screen.scale)continue;
 var rsc=lerp(rs.p1.screen.scale,rs.p2.screen.scale,pct(rv.z)),rxp=lerp(rs.p1.screen.x,rs.p2.screen.x,pct(rv.z))+rsc*rv.off*ROADW*W/2,
 ryp=lerp(rs.p1.screen.y,rs.p2.screen.y,pct(rv.z)),rw=rsc*BIKEW*W/2,rh=rw*1.3;
 if((ryp-rh)<rs.clip&&rw>2){cx.save();cx.beginPath();cx.rect(0,0,W,rs.clip);cx.clip();
-bikeBlit(rxp-rw/2,ryp-rh,rw,rh,rv.bike,rv.wob,rv.kick,rv.ks,rv.look,rv.down>0?rv.ks*.5:0);cx.restore();}}}
+if(rv.hot||rv.wind>0){var pu=.6+.4*Math.sin(raceT/90),rc=rv.wind>0?'224,74,58':'242,177,52';
+cx.fillStyle='rgba('+rc+','+(.28*pu)+')';cx.strokeStyle='rgba('+rc+','+(.95*pu)+')';cx.lineWidth=Math.max(2,rw*.04);
+cx.beginPath();cx.ellipse(rxp,ryp-rh*.04,rw*.62,rw*.17,0,0,TAU);cx.fill();cx.stroke();}
+bikeBlit(rxp-rw/2,ryp-rh,rw,rh,rv.bike,rv.wob,rv.kick,rv.ks,rv.look,rv.down>0?rv.ks*.5:0);
+if(rv.hot||rv.wind>0){var ay=ryp-rh-rw*.06-Math.abs(Math.sin(raceT/140))*rw*.08,as=Math.max(8,rw*.22);
+cx.fillStyle=rv.wind>0?'#e04a3a':'#f2b134';cx.strokeStyle='#1c241f';cx.lineWidth=Math.max(1.5,as*.1);cx.lineJoin='round';
+cx.beginPath();cx.moveTo(rxp,ay);cx.lineTo(rxp-as*.6,ay-as);cx.lineTo(rxp+as*.6,ay-as);cx.closePath();cx.fill();cx.stroke();}
+cx.restore();}}}
 for(var d=dust.length-1;d>=0;d--){var du=dust[d];cx.globalAlpha=clamp(du.life/du.max,0,1)*.6;cx.fillStyle=du.c;
 cx.beginPath();cx.arc(du.x,du.y,du.s,0,TAU);cx.fill();}cx.globalAlpha=1;
 for(var k2=sparks.length-1;k2>=0;k2--){var sk2=sparks[k2];cx.globalAlpha=clamp(sk2.life/sk2.max,0,1);cx.fillStyle=sk2.c;
 cx.fillRect(sk2.x,sk2.y,sk2.s,sk2.s);}cx.globalAlpha=1;
-var pw=BIKEW*W/2/CAMH,ph=Math.min(pw*1.3,H*.4);pw=ph/1.3;var pxx=W/2-pw/2+lean*W*.05,pyy=H-dockH-ph-4;
+var pw=PSC*BIKEW*W/2/CAMH,ph=pw*1.3;var pxx=W/2-pw/2+lean*W*.05,pyy=H-dockH-4-ph;
 pbw=pw;pby=pyy;pbh=ph;
 if(crashT>0){cx.save();cx.translate(pxx+pw/2,pyy+ph);cx.rotate((1-crashT/1400)*1.2);cx.translate(-(pxx+pw/2),-(pyy+ph));}
 bikeDraw(pxx,pyy,pw,ph,bike,lean,kickT,kickSide,LOOKS[0],keys.brake&&speed>0,0);
 if(crashT>0)cx.restore();
+if(warnSide){var wp=.55+.45*Math.sin(raceT/55),wx=warnSide>0?W:0,wg=cx.createLinearGradient(wx,0,W/2+(wx-W/2)*.45,0);
+wg.addColorStop(0,'rgba(224,74,58,'+(.75*wp)+')');wg.addColorStop(1,'rgba(224,74,58,0)');cx.fillStyle=wg;cx.fillRect(0,0,W,H-dockH);}
 cx.restore();
 if(flash>0){cx.fillStyle='rgba(224,74,58,'+(flash/400*.3)+')';cx.fillRect(0,0,W,H);}
 if(countdown>0){var num=Math.ceil(countdown/1000);cx.textAlign='center';
@@ -1581,7 +1601,7 @@ cx.font='900 '+Math.round(Math.min(W*.3,150))+'px "Russo One", sans-serif';
 cx.fillStyle='rgba(18,32,28,.6)';cx.fillText(num>0?num:'GO',W/2+4,H*.42+4);
 cx.fillStyle=num>0?'#f2b134':'#6aa84f';cx.fillText(num>0?num:'GO',W/2,H*.42);cx.textAlign='left';}
 gauge();}
-function gauge(){var r=Math.min(W*.13,54),gx=W-r-12,gy=H-dockH-r-10;
+function gauge(){var r=Math.min(W*.11,46),gx=W-r-10,gy=r+70;
 cx.save();cx.fillStyle='rgba(18,32,28,.72)';cx.beginPath();cx.arc(gx,gy,r,0,TAU);cx.fill();
 cx.strokeStyle='#f2b134';cx.lineWidth=2;cx.beginPath();cx.arc(gx,gy,r-2,0,TAU);cx.stroke();
 var a0=PI*.75,a1=PI*2.25,p=clamp(speed/bike.maxU,0,1);
@@ -1601,7 +1621,7 @@ UI.prog((pos+playerZ)/finishZ);}
 var BOOT='<svg viewBox="0 0 24 24"><path d="M6 2h6v9l7 3c1.6.7 2.2 2.2 2.2 3.6V21H4V2z" fill="currentColor"/></svg>';
 var BRAKE='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3"/><rect x="8" y="8" width="8" height="8" rx="1.5" fill="currentColor"/></svg>';
 var GAS='<svg viewBox="0 0 24 24"><path d="M4 20L12 3l8 17-8-4z" fill="currentColor"/></svg>';
-function dock(){var man=!Profile.autoGas;
+function dock(){var man=!Profile.autoGas;hotShown=-9;
 UI.dock('<div id="mPad"><span class="arr">◀</span><span class="arr">▶</span><i class="rail"></i><i id="mOrg"></i><i id="mKnob" class="rel"></i><span class="tip">'+T('steerTip')+'</span></div>'+
 '<div id="mActs"><div class="arow">'+(man?'<button class="abtn teal" id="mG">'+GAS+'<span>'+T('gas')+'</span></button>':'')+
 '<button class="abtn warn" id="mB">'+BRAKE+'<span>'+T('brake')+'</span></button></div>'+
@@ -1624,10 +1644,10 @@ hold('mB',function(){keys.brake=true;},function(){keys.brake=false;});
 hold('mG',function(){keys.gas=true;},function(){keys.gas=false;});
 $('mKL').addEventListener('pointerdown',function(ev){ev.preventDefault();kick(-1);});
 $('mKR').addEventListener('pointerdown',function(ev){ev.preventDefault();kick(1);});});}
-function kick(side){if(st!=='race'||crashT>0)return;kickT=300;kickSide=side;SFX.kick();
+function kick(side){if(st!=='race'||crashT>0||kickT>0)return;kickT=300;kickSide=side;SFX.kick();
 for(var i=0;i<rivals.length;i++){var r=rivals[i];if(r.down>0)continue;
-var dz=r.z-(pos+playerZ);if(Math.abs(dz)<SEG*1.6&&Math.abs(r.off-px)<.7&&((side<0&&r.off<px)||(side>0&&r.off>px))){
-r.hp-=34;r.wob=side*.9;sparksBurst(W/2+side*pbw*.55,pby+pbh*.5);
+var dz=r.z-(pos+playerZ);if(Math.abs(dz)<SEG*1.3&&Math.abs(r.off-px)<.6&&((side<0&&r.off<px)||(side>0&&r.off>px))){
+r.hp-=34;r.wob=side*.9;r.wind=0;r.cd=Math.max(r.cd,1400);sparksBurst(W/2+side*pbw*.55,pby+pbh*.5);
 if(r.hp<=0){r.down=2200;r.sp*=.35;toast(T('rivalKicked'),1200,'gold');SFX.hit();}
 else toast(T('rivalKicked'),700);}}}
 function sparksBurst(x,y){for(var i=0;i<12;i++)sparks.push({x:x,y:y,vx:rnd(-160,160),vy:rnd(-200,-40),life:420,max:420,s:rnd(2,5),c:Math.random()<.5?'#f2b134':'#fff8ea'});}
@@ -1735,20 +1755,56 @@ var dz=c.z-(pos+playerZ);
 if(dz>-SEG*.6&&dz<SEG*1.2&&Math.abs(c.off-px)<.3&&crashT<=0){
 health-=26;speed*=.35;shake=10;flash=400;crashT=900;SFX.hit();toast(T('wipeout'),1200);
 sparksBurst(W/2,pby+pbh*.65);if(health<=0){health=0;crashT=1600;}}}
+hotSide=0;warnSide=0;
 for(var r=0;r<rivals.length;r++){var rv=rivals[r];
-if(rv.down>0){rv.down-=dt;rv.sp=Math.max(rv.sp,bike.maxU*.2);if(rv.down<=0){rv.hp=100;rv.sp=rv.top;}}
-var ts=findSeg(rv.z),target=rv.top*(1-Math.abs(ts.curve)*.035);
-rv.sp+=(target-rv.sp)*Math.min(1,dt/700);
+rv.hot=0;if(rv.down>0){rv.down-=dt;if(rv.down<=0){rv.hp=100;}}
+var ts=findSeg(rv.z),dzp=rv.z-(pos+playerZ),away=rv.off-px,adx=Math.abs(away),near=rv.down<=0&&Math.abs(dzp)<SEG*7;
+var target=rv.top*(1-Math.abs(ts.curve)*.012);
+/* резинка: далеко впереди — чуть сбавляет, сильно отстал — чуть поднажимает */
+if(dzp>bike.maxU*3.2)target*=1-Math.min(.06,(dzp-bike.maxU*3.2)/(bike.maxU*40));
+else if(dzp<-bike.maxU*1.2)target*=1+Math.min(.05,(-dzp-bike.maxU*1.2)/(bike.maxU*25));
+if(rv.down>0)target=rv.top*.25;
+else if(rv.aggr&&Math.abs(dzp)<SEG*3&&crashT<=0)target=clamp(speed-dzp*.9,rv.top*.7,rv.top*1.06);
+var goal=rv.home+Math.sin(raceT/1300+r*2)*.12-ts.curve*.03,lim=1e9;
+/* дуэль: подруливает к тебе борт в борт */
+if(rv.aggr&&near&&rv.down<=0&&crashT<=0){var dir=away>=0?1:-1;if(Math.abs(px+dir*.4)>.95)dir=-dir;goal=px+dir*.4;}
+/* объезд попутных машин: смотрим вперёд, ищем свободную полосу, иначе сбрасываем скорость */
+var blocker=null,bdz=1e9,ci,cc;
+/* выбранную машину и полосу запоминаем, пока не обогнали (иначе соперник мечется и застревает позади) */
+if(rv.pc&&(rv.z>rv.pc.z+SEG*2.2||rv.pc.z-rv.z>SEG*20))rv.pc=null;
+if(!rv.pc){for(ci=0;ci<cars.length;ci++){cc=cars[ci];var dzc=cc.z-rv.z;
+if(dzc>-SEG*.4&&dzc<SEG*14&&Math.abs(cc.off-rv.off)<.62&&dzc<bdz){bdz=dzc;blocker=cc;}}
+if(blocker){rv.pc=blocker;rv.pl=null;}}
+if(rv.pc){blocker=rv.pc;bdz=blocker.z-rv.z;
+if(rv.pl===null){var cands=[-.8,-.4,0,.4,.8],bd0=9;
+for(var k3=0;k3<cands.length;k3++){var cf=cands[k3],okc=true;
+for(ci=0;ci<cars.length;ci++){cc=cars[ci];var dd2=cc.z-rv.z;if(dd2>-SEG*.8&&dd2<SEG*16&&Math.abs(cc.off-cf)<.62){okc=false;break;}}
+if(okc&&Math.abs(cf-rv.off)<bd0){bd0=Math.abs(cf-rv.off);rv.pl=cf;}}}
+if(rv.pl!==null)goal=rv.pl;
+if(Math.abs(blocker.off-rv.off)<.62&&bdz>-SEG*.4){
+/* тормозим только если уйти в сторону уже не успеваем */
+var tReach=rv.pl===null?9:Math.abs(rv.pl-rv.off)/1.6,tHit=Math.max(0,bdz-SEG*.9)/Math.max(300,rv.sp-blocker.sp);
+if(rv.pl===null||tReach>tHit)lim=blocker.sp*.97;}}
+rv.sp+=clamp(Math.min(target,lim)-rv.sp,-rv.top/1.4*d,rv.top/rv.acc*d);
+if(lim<1e9&&rv.sp>lim)rv.sp=Math.max(lim,rv.sp-rv.top*d*2);
 rv.z+=rv.sp*d;
-rv.off+=(-ts.curve*.06+Math.sin(raceT/900+r)*.05)*d*2;
-var dz2=rv.z-(pos+playerZ);
-if(Math.abs(dz2)<SEG*2){var away=rv.off-px;if(Math.abs(away)<.3)rv.off+=(away>0?1:-1)*d*.7;}
+rv.off+=clamp(goal-rv.off,-1,1)*d*(blocker?1.6:.9);
+if(blocker){var dzz=blocker.z-rv.z;if(dzz>-SEG*.4&&dzz<SEG*.9&&Math.abs(blocker.off-rv.off)<.42){rv.z=blocker.z-SEG*.9;rv.sp=Math.min(rv.sp,blocker.sp);}}
+if(Math.abs(dzp)<SEG*2&&adx<.2)rv.off+=(away>=0?1:-1)*d*.9;
 rv.off=clamp(rv.off,-.95,.95);rv.wob*=Math.pow(.02,d);rv.kick=Math.max(0,rv.kick-dt);
-if(Math.abs(dz2)<SEG*1.3&&Math.abs(rv.off-px)<.32&&rv.down<=0&&crashT<=0&&Math.random()<d*(.5+diff*.5)){
-rv.kick=300;rv.ks=rv.off>px?-1:1;health-=12+diff*4;shake=6;flash=260;SFX.hit();toast(T('youKicked'),800);
-sparksBurst(W/2+(rv.off>px?1:-1)*pbw*.55,pby+pbh*.5);
-if(health<=0){health=0;crashT=1600;speed*=.2;toast(T('wipeout'),1300);}}}
+/* дистанция пинка — одна и та же для тебя и для соперников */
+var inK=rv.down<=0&&crashT<=0&&Math.abs(dzp)<SEG*1.3&&adx<.6&&adx>.04;
+if(inK)rv.hot=away<0?-1:1;
+if(inK&&(!hotSide))hotSide=rv.hot;
+rv.cd-=dt;
+if(rv.wind>0){rv.wind-=dt;rv.ks=away>0?-1:1;warnSide=away>0?1:-1;
+if(rv.wind<=0){if(inK&&rv.hp>0){rv.kick=300;health-=12+diff*4;shake=6;flash=260;SFX.hit();toast(T('youKicked'),800);
+sparksBurst(W/2+(away>0?1:-1)*pbw*.55,pby+pbh*.5);
+if(health<=0){health=0;crashT=1600;speed*=.2;toast(T('wipeout'),1300);}}
+rv.cd=[3200,2400,1700][diff]*(.8+Math.random()*.6);}}
+else if(inK&&rv.aggr&&rv.cd<=0){rv.wind=[560,450,350][diff];rv.ks=away>0?-1:1;SFX.warn();toast(T('rivalWarn'),600);}}
 place=computePlace();
+if(hotSide!==hotShown){hotShown=hotSide;var bkl=$('mKL'),bkr=$('mKR');if(bkl)bkl.classList.toggle('hot',hotSide<0);if(bkr)bkr.classList.toggle('hot',hotSide>0);}
 for(var s2=0;s2<segs.length;s2++)segs[s2].cars.length=0;
 for(var c2=0;c2<cars.length;c2++){var cc=cars[c2],sg=findSeg(cc.z);cc.pct=pct(cc.z);sg.cars.push(cc);}
 for(var dd=dust.length-1;dd>=0;dd--){var du=dust[dd];du.life-=dt;if(du.life<=0){dust.splice(dd,1);continue;}
